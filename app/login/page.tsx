@@ -8,7 +8,6 @@ type Modo = "entrar" | "cadastrar";
 
 export default function LoginPage() {
   const router = useRouter();
-  const supabase = createClient();
 
   const [modo, setModo] = useState<Modo>("entrar");
   const [email, setEmail] = useState("");
@@ -19,6 +18,7 @@ export default function LoginPage() {
   const [carregando, setCarregando] = useState(false);
 
   async function entrar() {
+    const supabase = createClient();
     const { error } = await supabase.auth.signInWithPassword({ email, password: senha });
     if (error) {
       setErro("E-mail ou senha inválidos.");
@@ -29,6 +29,7 @@ export default function LoginPage() {
   }
 
   async function cadastrar() {
+    const supabase = createClient();
     const { data, error } = await supabase.auth.signUp({
       email,
       password: senha,
