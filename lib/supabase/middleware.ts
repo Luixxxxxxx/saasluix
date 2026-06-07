@@ -14,11 +14,26 @@ function ehRotaPublica(pathname: string): boolean {
  * (checklist, item 3: toda tela protegida checa quem está entrando).
  */
 export async function updateSession(request: NextRequest) {
+  const { pathname } = request.nextUrl;
+  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+
+  if (!supabaseUrl || !supabaseAnonKey) {
+    if (ehRotaPublica(pathname)) {
+      return NextResponse.next({ request });
+    }
+
+    const url = request.nextUrl.clone();
+    url.pathname = "/login";
+    url.searchParams.set("error", "config");
+    return NextResponse.redirect(url);
+  }
+
   let supabaseResponse = NextResponse.next({ request });
 
   const supabase = createServerClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+    supabaseUrl,
+    supabaseAnonKey,
     {
       cookies: {
         getAll() {
@@ -39,8 +54,6 @@ export async function updateSession(request: NextRequest) {
   const {
     data: { user },
   } = await supabase.auth.getUser();
-
-  const { pathname } = request.nextUrl;
 
   // Não logado tentando acessar rota privada → manda para /login
   if (!user && !ehRotaPublica(pathname)) {
