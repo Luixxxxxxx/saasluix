@@ -1,5 +1,6 @@
 import Topbar from "@/components/layout/Topbar";
 import ExtratoTable from "@/components/extrato/ExtratoTable";
+import ExportExtratoActions from "@/components/extrato/ExportExtratoActions";
 import {
   getBoletos,
   getCustosManuais,
@@ -22,7 +23,7 @@ export default async function ExtratoPage() {
       <Topbar
         title="Extrato"
         subtitle="Movimentações unificadas - banco, manuais e boletos"
-        actions={<button className="btn">Exportar</button>}
+        actions={<ExportExtratoActions transacoes={extrato} />}
       />
       <ExtratoTable transacoes={extrato} />
     </>
