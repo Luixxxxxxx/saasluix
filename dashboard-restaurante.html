@@ -1,0 +1,1132 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Painel Financeiro</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@300;400;500&family=Syne:wght@400;600;700;800&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --bg:        #0d0f0f;
+    --surface:   #141717;
+    --surface2:  #1a1e1e;
+    --border:    #242929;
+    --border2:   #2e3535;
+    --text:      #e8edec;
+    --muted:     #6b7878;
+    --muted2:    #4a5454;
+    --green:     #22c98e;
+    --green-dim: #16805a;
+    --green-bg:  #0d2e20;
+    --red:       #e05555;
+    --red-dim:   #8f3030;
+    --red-bg:    #2e1212;
+    --amber:     #e8a930;
+    --amber-bg:  #2e2010;
+    --accent:    #22c98e;
+    --mono:      'DM Mono', monospace;
+    --sans:      'Syne', sans-serif;
+  }
+
+  html { font-size: 16px; }
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: var(--sans);
+    min-height: 100vh;
+    display: flex;
+    overflow-x: hidden;
+  }
+
+  /* ── SIDEBAR ── */
+  .sidebar {
+    width: 220px;
+    min-height: 100vh;
+    background: var(--surface);
+    border-right: 1px solid var(--border);
+    display: flex;
+    flex-direction: column;
+    position: fixed;
+    top: 0; left: 0;
+    z-index: 100;
+    padding: 0 0 24px;
+  }
+
+  .sidebar-logo {
+    padding: 28px 24px 24px;
+    border-bottom: 1px solid var(--border);
+    margin-bottom: 8px;
+  }
+  .sidebar-logo .wordmark {
+    font-family: var(--sans);
+    font-weight: 800;
+    font-size: 1.1rem;
+    letter-spacing: 0;
+    color: var(--text);
+    line-height: 1.12;
+    overflow-wrap: anywhere;
+  }
+  .sidebar-logo .sub {
+    font-family: var(--mono);
+    font-size: 0.65rem;
+    color: var(--muted);
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    margin-top: 4px;
+  }
+
+  .nav-section {
+    padding: 8px 12px 0;
+    flex: 1;
+  }
+  .nav-label {
+    font-family: var(--mono);
+    font-size: 0.6rem;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--muted2);
+    padding: 12px 12px 6px;
+  }
+  .nav-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 9px 12px;
+    border-radius: 6px;
+    font-size: 0.875rem;
+    font-weight: 600;
+    color: var(--muted);
+    cursor: pointer;
+    transition: all 0.15s ease;
+    margin-bottom: 2px;
+    border: 1px solid transparent;
+  }
+  .nav-item:hover { color: var(--text); background: var(--surface2); }
+  .nav-item.active {
+    color: var(--green);
+    background: var(--green-bg);
+    border-color: var(--green-dim);
+  }
+  .nav-item svg { width: 16px; height: 16px; flex-shrink: 0; }
+
+  .sidebar-footer {
+    padding: 16px 24px 0;
+    border-top: 1px solid var(--border);
+    margin: 0 12px;
+  }
+  .sync-status {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-family: var(--mono);
+    font-size: 0.65rem;
+    color: var(--muted);
+  }
+  .sync-dot {
+    width: 6px; height: 6px;
+    border-radius: 50%;
+    background: var(--green);
+    box-shadow: 0 0 6px var(--green);
+    animation: pulse 2s infinite;
+  }
+  @keyframes pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.4; }
+  }
+
+  /* ── MAIN ── */
+  .main {
+    margin-left: 220px;
+    flex: 1;
+    padding: 32px 36px;
+    max-width: calc(100vw - 220px);
+  }
+
+  /* ── TOPBAR ── */
+  .topbar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 32px;
+  }
+  .topbar-left h1 {
+    font-size: 1.5rem;
+    font-weight: 800;
+    letter-spacing: -0.03em;
+    line-height: 1;
+  }
+  .topbar-left .date {
+    font-family: var(--mono);
+    font-size: 0.7rem;
+    color: var(--muted);
+    margin-top: 5px;
+    letter-spacing: 0.04em;
+  }
+  .topbar-right {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+  .btn {
+    font-family: var(--sans);
+    font-weight: 600;
+    font-size: 0.8rem;
+    padding: 8px 16px;
+    border-radius: 6px;
+    border: 1px solid var(--border2);
+    background: var(--surface2);
+    color: var(--muted);
+    cursor: pointer;
+    transition: all 0.15s;
+    letter-spacing: 0.01em;
+  }
+  .btn:hover { color: var(--text); border-color: var(--muted2); }
+  .btn-primary {
+    background: var(--green-bg);
+    border-color: var(--green-dim);
+    color: var(--green);
+  }
+  .btn-primary:hover { background: #0f3d28; }
+
+  /* ── ALERT BAR ── */
+  .alert-bar {
+    background: var(--amber-bg);
+    border: 1px solid #5a3d10;
+    border-radius: 8px;
+    padding: 12px 16px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 24px;
+    font-size: 0.8rem;
+  }
+  .alert-bar svg { color: var(--amber); flex-shrink: 0; }
+  .alert-bar span { color: var(--amber); font-weight: 600; }
+  .alert-bar .alert-items { color: #c49030; margin-left: 4px; }
+
+  /* ── KPI GRID ── */
+  .kpi-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 16px;
+    margin-bottom: 24px;
+  }
+
+  .kpi-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 20px;
+    position: relative;
+    overflow: hidden;
+    transition: border-color 0.2s;
+  }
+  .kpi-card:hover { border-color: var(--border2); }
+  .kpi-card::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 2px;
+  }
+  .kpi-card.positive::before { background: var(--green); }
+  .kpi-card.negative::before { background: var(--red); }
+  .kpi-card.neutral::before  { background: var(--muted2); }
+  .kpi-card.result::before   { background: var(--green); }
+
+  .kpi-label {
+    font-family: var(--mono);
+    font-size: 0.65rem;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin-bottom: 12px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+  .kpi-label svg { width: 12px; height: 12px; }
+
+  .kpi-value {
+    font-family: var(--mono);
+    font-size: 1.65rem;
+    font-weight: 500;
+    letter-spacing: -0.02em;
+    line-height: 1;
+    margin-bottom: 8px;
+  }
+  .kpi-value.green { color: var(--green); }
+  .kpi-value.red   { color: var(--red); }
+  .kpi-value.white { color: var(--text); }
+
+  .kpi-sub {
+    font-family: var(--mono);
+    font-size: 0.65rem;
+    color: var(--muted);
+    display: flex;
+    align-items: center;
+    gap: 4px;
+  }
+  .kpi-badge {
+    font-size: 0.6rem;
+    padding: 2px 6px;
+    border-radius: 3px;
+    font-weight: 500;
+  }
+  .kpi-badge.up   { background: var(--green-bg); color: var(--green); }
+  .kpi-badge.down { background: var(--red-bg);   color: var(--red); }
+
+  /* ── MIDDLE ROW ── */
+  .mid-row {
+    display: grid;
+    grid-template-columns: 1fr 340px;
+    gap: 16px;
+    margin-bottom: 24px;
+  }
+
+  /* ── CHART CARD ── */
+  .chart-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 24px;
+  }
+  .card-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 20px;
+  }
+  .card-title {
+    font-size: 0.875rem;
+    font-weight: 700;
+    letter-spacing: -0.01em;
+    color: var(--text);
+  }
+  .card-sub {
+    font-family: var(--mono);
+    font-size: 0.65rem;
+    color: var(--muted);
+    margin-top: 2px;
+  }
+  .legend {
+    display: flex;
+    gap: 14px;
+  }
+  .legend-item {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    font-family: var(--mono);
+    font-size: 0.65rem;
+    color: var(--muted);
+  }
+  .legend-dot {
+    width: 6px; height: 6px;
+    border-radius: 50%;
+  }
+  .chart-wrap { position: relative; height: 200px; }
+
+  /* ── FIXOS CARD ── */
+  .fixos-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 24px;
+    display: flex;
+    flex-direction: column;
+  }
+  .fixos-progress {
+    margin: 16px 0;
+  }
+  .fixos-bar-bg {
+    height: 4px;
+    background: var(--border2);
+    border-radius: 2px;
+    overflow: hidden;
+    margin-bottom: 10px;
+  }
+  .fixos-bar-fill {
+    height: 100%;
+    background: var(--green);
+    border-radius: 2px;
+    transition: width 0.6s ease;
+  }
+  .fixos-counts {
+    display: flex;
+    justify-content: space-between;
+    font-family: var(--mono);
+    font-size: 0.65rem;
+  }
+  .fixos-counts .paid   { color: var(--green); }
+  .fixos-counts .pend   { color: var(--amber); }
+  .fixos-total {
+    font-family: var(--mono);
+    font-size: 1.2rem;
+    font-weight: 500;
+    color: var(--text);
+    margin-bottom: 4px;
+  }
+  .fixos-list {
+    flex: 1;
+    margin-top: 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+  .fixo-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 8px 10px;
+    border-radius: 6px;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    font-size: 0.8rem;
+    cursor: pointer;
+    transition: border-color 0.15s;
+  }
+  .fixo-item:hover { border-color: var(--border2); }
+  .fixo-name { font-weight: 600; color: var(--text); font-size: 0.8rem; }
+  .fixo-due  { font-family: var(--mono); font-size: 0.62rem; color: var(--muted); margin-top: 1px; }
+  .fixo-val  { font-family: var(--mono); font-size: 0.8rem; color: var(--muted); }
+  .fixo-badge {
+    font-family: var(--mono);
+    font-size: 0.58rem;
+    padding: 2px 7px;
+    border-radius: 3px;
+    font-weight: 500;
+    margin-left: 8px;
+  }
+  .fixo-badge.pago    { background: var(--green-bg); color: var(--green); }
+  .fixo-badge.pendente{ background: var(--amber-bg); color: var(--amber); }
+
+  /* ── BOTTOM ROW ── */
+  .bottom-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+  }
+
+  /* ── BOLETOS ── */
+  .boletos-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 24px;
+  }
+  .boleto-list { display: flex; flex-direction: column; gap: 8px; margin-top: 16px; }
+  .boleto-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 12px 14px;
+    border-radius: 7px;
+    border: 1px solid var(--border);
+    background: var(--surface2);
+    transition: border-color 0.15s;
+    cursor: pointer;
+  }
+  .boleto-item:hover { border-color: var(--border2); }
+  .boleto-item.alerta { border-color: #5a3d10; background: #1e1508; }
+  .boleto-item.vencido { border-color: var(--red-dim); background: var(--red-bg); }
+  .boleto-left { display: flex; flex-direction: column; gap: 2px; }
+  .boleto-fornecedor { font-size: 0.825rem; font-weight: 600; color: var(--text); }
+  .boleto-venc {
+    font-family: var(--mono);
+    font-size: 0.62rem;
+    color: var(--muted);
+  }
+  .boleto-venc.alerta { color: var(--amber); }
+  .boleto-venc.vencido { color: var(--red); }
+  .boleto-right { display: flex; align-items: center; gap: 10px; }
+  .boleto-val { font-family: var(--mono); font-size: 0.875rem; color: var(--text); }
+  .status-pill {
+    font-family: var(--mono);
+    font-size: 0.58rem;
+    padding: 3px 8px;
+    border-radius: 3px;
+    font-weight: 500;
+    letter-spacing: 0.04em;
+  }
+  .pill-pend   { background: var(--amber-bg); color: var(--amber); border: 1px solid #5a3d10; }
+  .pill-alerta { background: #3d2800; color: var(--amber); border: 1px solid #7a5010; }
+  .pill-venc   { background: var(--red-bg); color: var(--red); border: 1px solid var(--red-dim); }
+  .pill-pago   { background: var(--green-bg); color: var(--green); border: 1px solid var(--green-dim); }
+
+  /* ── EXTRATO ── */
+  .extrato-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 24px;
+  }
+  .extrato-filters {
+    display: flex;
+    gap: 6px;
+    margin-top: 14px;
+    margin-bottom: 14px;
+  }
+  .filter-btn {
+    font-family: var(--mono);
+    font-size: 0.65rem;
+    padding: 4px 10px;
+    border-radius: 4px;
+    border: 1px solid var(--border2);
+    background: transparent;
+    color: var(--muted);
+    cursor: pointer;
+    letter-spacing: 0.04em;
+    transition: all 0.15s;
+  }
+  .filter-btn:hover  { color: var(--text); border-color: var(--muted2); }
+  .filter-btn.active { color: var(--green); border-color: var(--green-dim); background: var(--green-bg); }
+
+  .extrato-table { width: 100%; border-collapse: collapse; }
+  .extrato-table thead tr {
+    border-bottom: 1px solid var(--border);
+  }
+  .extrato-table th {
+    font-family: var(--mono);
+    font-size: 0.6rem;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--muted2);
+    padding: 6px 8px;
+    text-align: left;
+    font-weight: 400;
+  }
+  .extrato-table tbody tr {
+    border-bottom: 1px solid var(--border);
+    transition: background 0.12s;
+  }
+  .extrato-table tbody tr:last-child { border-bottom: none; }
+  .extrato-table tbody tr:hover { background: var(--surface2); }
+  .extrato-table td {
+    padding: 10px 8px;
+    font-size: 0.78rem;
+    vertical-align: middle;
+  }
+  .td-date { font-family: var(--mono); font-size: 0.68rem; color: var(--muted); white-space: nowrap; }
+  .td-desc { font-weight: 600; color: var(--text); }
+  .td-origem {
+    font-family: var(--mono);
+    font-size: 0.6rem;
+    padding: 2px 7px;
+    border-radius: 3px;
+    border: 1px solid var(--border2);
+    color: var(--muted);
+    white-space: nowrap;
+    display: inline-block;
+  }
+  .td-val { font-family: var(--mono); font-size: 0.825rem; font-weight: 500; text-align: right; white-space: nowrap; }
+  .td-val.entrada { color: var(--green); }
+  .td-val.saida   { color: var(--red); }
+
+  /* ── REGISTRO MANUAL MODAL ── */
+  .fab {
+    position: fixed;
+    bottom: 32px; right: 32px;
+    width: 48px; height: 48px;
+    border-radius: 50%;
+    background: var(--green);
+    border: none;
+    color: #0d2e20;
+    font-size: 1.4rem;
+    display: flex; align-items: center; justify-content: center;
+    cursor: pointer;
+    box-shadow: 0 4px 20px rgba(34,201,142,0.35);
+    transition: transform 0.15s, box-shadow 0.15s;
+    z-index: 200;
+  }
+  .fab:hover { transform: scale(1.08); box-shadow: 0 6px 28px rgba(34,201,142,0.5); }
+
+  .modal-overlay {
+    display: none;
+    position: fixed; inset: 0;
+    background: rgba(0,0,0,0.7);
+    z-index: 300;
+    align-items: center; justify-content: center;
+  }
+  .modal-overlay.open { display: flex; }
+  .modal {
+    background: var(--surface);
+    border: 1px solid var(--border2);
+    border-radius: 12px;
+    padding: 28px;
+    width: 380px;
+    animation: slideUp 0.2s ease;
+  }
+  @keyframes slideUp {
+    from { opacity: 0; transform: translateY(16px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+  .modal-title {
+    font-size: 1rem;
+    font-weight: 700;
+    margin-bottom: 4px;
+    letter-spacing: -0.01em;
+  }
+  .modal-sub {
+    font-family: var(--mono);
+    font-size: 0.65rem;
+    color: var(--muted);
+    margin-bottom: 20px;
+  }
+  .form-group { margin-bottom: 14px; }
+  .form-label {
+    display: block;
+    font-family: var(--mono);
+    font-size: 0.65rem;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin-bottom: 6px;
+  }
+  .form-input, .form-select {
+    width: 100%;
+    background: var(--surface2);
+    border: 1px solid var(--border2);
+    border-radius: 6px;
+    padding: 9px 12px;
+    color: var(--text);
+    font-family: var(--mono);
+    font-size: 0.825rem;
+    outline: none;
+    transition: border-color 0.15s;
+    appearance: none;
+  }
+  .form-input:focus, .form-select:focus { border-color: var(--green-dim); }
+  .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+  .modal-actions { display: flex; gap: 10px; margin-top: 20px; justify-content: flex-end; }
+  .btn-cancel {
+    font-family: var(--sans);
+    font-weight: 600;
+    font-size: 0.8rem;
+    padding: 9px 18px;
+    border-radius: 6px;
+    border: 1px solid var(--border2);
+    background: transparent;
+    color: var(--muted);
+    cursor: pointer;
+  }
+  .btn-save {
+    font-family: var(--sans);
+    font-weight: 700;
+    font-size: 0.8rem;
+    padding: 9px 20px;
+    border-radius: 6px;
+    border: none;
+    background: var(--green);
+    color: #0a2419;
+    cursor: pointer;
+    transition: opacity 0.15s;
+  }
+  .btn-save:hover { opacity: 0.88; }
+
+  /* scrollbar */
+  ::-webkit-scrollbar { width: 6px; }
+  ::-webkit-scrollbar-track { background: var(--bg); }
+  ::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 3px; }
+</style>
+</head>
+<body>
+
+<!-- ══ SIDEBAR ══ -->
+<nav class="sidebar">
+  <div class="sidebar-logo">
+    <div class="wordmark">Meu Restaurante</div>
+    <div class="sub">Painel Financeiro</div>
+  </div>
+  <div class="nav-section">
+    <div class="nav-label">Módulos</div>
+
+    <div class="nav-item active" onclick="setNav(this)">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
+      Visão Geral
+    </div>
+    <div class="nav-item" onclick="setNav(this)">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2v20M2 12h20"/></svg>
+      Registro Manual
+    </div>
+    <div class="nav-item" onclick="setNav(this)">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>
+      Custos Fixos
+    </div>
+    <div class="nav-item" onclick="setNav(this)">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
+      Boletos
+    </div>
+    <div class="nav-item" onclick="setNav(this)">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg>
+      Extrato
+    </div>
+
+    <div class="nav-label" style="margin-top:8px;">Sistema</div>
+    <div class="nav-item" onclick="setNav(this)">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.07 4.93A10 10 0 105.93 19.07M12 2v2m0 18v-2m10-8h-2M4 12H2m15.07-6.93l-1.41 1.41M8.34 15.66l-1.41 1.41m9.9 0l-1.41-1.41M8.34 8.34L6.93 6.93"/></svg>
+      Integrações
+    </div>
+  </div>
+
+  <div class="sidebar-footer">
+    <div class="sync-status">
+      <div class="sync-dot"></div>
+      Sincronizado há 2h
+    </div>
+  </div>
+</nav>
+
+<!-- ══ MAIN ══ -->
+<main class="main">
+
+  <!-- Topbar -->
+  <div class="topbar">
+    <div class="topbar-left">
+      <h1>Visão Geral</h1>
+      <div class="date">Junho 2025 &nbsp;·&nbsp; Bradesco PJ conectado &nbsp;·&nbsp; Nubank PJ conectado</div>
+    </div>
+    <div class="topbar-right">
+      <button class="btn">Jun 2025 ▾</button>
+      <button class="btn btn-primary">+ Registrar custo</button>
+    </div>
+  </div>
+
+  <!-- Alert bar -->
+  <div class="alert-bar">
+    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+    <span>2 boletos vencem em até 3 dias:</span>
+    <span class="alert-items">Coca-Cola Atacado (vence amanhã) &nbsp;·&nbsp; Distribuidora Frios (vence em 3 dias)</span>
+  </div>
+
+  <!-- KPIs -->
+  <div class="kpi-grid">
+    <div class="kpi-card neutral">
+      <div class="kpi-label">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="5" width="20" height="14" rx="2"/><line x1="2" y1="10" x2="22" y2="10"/></svg>
+        Saldo Atual
+      </div>
+      <div class="kpi-value white">R$ 18.430</div>
+      <div class="kpi-sub">Bradesco PJ + Nubank PJ</div>
+    </div>
+    <div class="kpi-card positive">
+      <div class="kpi-label">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/><polyline points="17 6 23 6 23 12"/></svg>
+        Entradas do Mês
+      </div>
+      <div class="kpi-value green">R$ 84.210</div>
+      <div class="kpi-sub">
+        <span class="kpi-badge up">↑ 12%</span>&nbsp; vs mês anterior
+      </div>
+      <div class="kpi-sub" style="margin-top:4px">Maquininha Bradesco</div>
+    </div>
+    <div class="kpi-card negative">
+      <div class="kpi-label">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="23 18 13.5 8.5 8.5 13.5 1 6"/><polyline points="17 18 23 18 23 12"/></svg>
+        Saídas do Mês
+      </div>
+      <div class="kpi-value red">R$ 61.780</div>
+      <div class="kpi-sub">
+        <span class="kpi-badge down">↑ 8%</span>&nbsp; vs mês anterior
+      </div>
+    </div>
+    <div class="kpi-card result">
+      <div class="kpi-label">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
+        Resultado do Mês
+      </div>
+      <div class="kpi-value green">R$ 22.430</div>
+      <div class="kpi-sub">
+        <span class="kpi-badge up">↑ 18%</span>&nbsp; vs mês anterior
+      </div>
+    </div>
+  </div>
+
+  <!-- Gráfico + Fixos -->
+  <div class="mid-row">
+    <div class="chart-card">
+      <div class="card-header">
+        <div>
+          <div class="card-title">Entradas vs Saídas</div>
+          <div class="card-sub">Por semana — Junho 2025</div>
+        </div>
+        <div class="legend">
+          <div class="legend-item"><div class="legend-dot" style="background:var(--green)"></div> Entradas</div>
+          <div class="legend-item"><div class="legend-dot" style="background:var(--red)"></div> Saídas</div>
+        </div>
+      </div>
+      <div class="chart-wrap">
+        <canvas id="barChart"></canvas>
+      </div>
+    </div>
+
+    <div class="fixos-card">
+      <div class="card-header">
+        <div>
+          <div class="card-title">Custos Fixos</div>
+          <div class="card-sub">Junho 2025</div>
+        </div>
+      </div>
+      <div class="fixos-total">R$ 14.200</div>
+      <div class="fixos-progress">
+        <div class="fixos-bar-bg">
+          <div class="fixos-bar-fill" style="width: 60%"></div>
+        </div>
+        <div class="fixos-counts">
+          <span class="paid">3 pagos</span>
+          <span class="pend">2 pendentes</span>
+        </div>
+      </div>
+      <div class="fixos-list">
+        <div class="fixo-item">
+          <div>
+            <div class="fixo-name">Aluguel</div>
+            <div class="fixo-due">Vence dia 5</div>
+          </div>
+          <div style="display:flex;align-items:center">
+            <span class="fixo-val">R$ 6.500</span>
+            <span class="fixo-badge pago">PAGO</span>
+          </div>
+        </div>
+        <div class="fixo-item">
+          <div>
+            <div class="fixo-name">Contador</div>
+            <div class="fixo-due">Vence dia 10</div>
+          </div>
+          <div style="display:flex;align-items:center">
+            <span class="fixo-val">R$ 1.200</span>
+            <span class="fixo-badge pago">PAGO</span>
+          </div>
+        </div>
+        <div class="fixo-item">
+          <div>
+            <div class="fixo-name">Internet</div>
+            <div class="fixo-due">Vence dia 15</div>
+          </div>
+          <div style="display:flex;align-items:center">
+            <span class="fixo-val">R$ 280</span>
+            <span class="fixo-badge pago">PAGO</span>
+          </div>
+        </div>
+        <div class="fixo-item">
+          <div>
+            <div class="fixo-name">Alvará / Taxa</div>
+            <div class="fixo-due">Vence dia 20</div>
+          </div>
+          <div style="display:flex;align-items:center">
+            <span class="fixo-val">R$ 420</span>
+            <span class="fixo-badge pendente">PENDENTE</span>
+          </div>
+        </div>
+        <div class="fixo-item">
+          <div>
+            <div class="fixo-name">Seguro</div>
+            <div class="fixo-due">Vence dia 28</div>
+          </div>
+          <div style="display:flex;align-items:center">
+            <span class="fixo-val">R$ 5.800</span>
+            <span class="fixo-badge pendente">PENDENTE</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Boletos + Extrato -->
+  <div class="bottom-row">
+
+    <div class="boletos-card">
+      <div class="card-header">
+        <div>
+          <div class="card-title">Boletos</div>
+          <div class="card-sub">Agenda de pagamentos</div>
+        </div>
+        <button class="btn">+ Novo</button>
+      </div>
+      <div class="boleto-list">
+
+        <div class="boleto-item vencido">
+          <div class="boleto-left">
+            <div class="boleto-fornecedor">Hortifruti Central</div>
+            <div class="boleto-venc vencido">Venceu em 02/06</div>
+          </div>
+          <div class="boleto-right">
+            <span class="boleto-val">R$ 1.840,00</span>
+            <span class="status-pill pill-venc">VENCIDO</span>
+          </div>
+        </div>
+
+        <div class="boleto-item alerta">
+          <div class="boleto-left">
+            <div class="boleto-fornecedor">Coca-Cola Atacado</div>
+            <div class="boleto-venc alerta">Vence amanhã — 07/06</div>
+          </div>
+          <div class="boleto-right">
+            <span class="boleto-val">R$ 3.200,00</span>
+            <span class="status-pill pill-alerta">URGENTE</span>
+          </div>
+        </div>
+
+        <div class="boleto-item alerta">
+          <div class="boleto-left">
+            <div class="boleto-fornecedor">Distribuidora Frios</div>
+            <div class="boleto-venc alerta">Vence em 3 dias — 09/06</div>
+          </div>
+          <div class="boleto-right">
+            <span class="boleto-val">R$ 2.100,00</span>
+            <span class="status-pill pill-alerta">URGENTE</span>
+          </div>
+        </div>
+
+        <div class="boleto-item">
+          <div class="boleto-left">
+            <div class="boleto-fornecedor">GLP Gás</div>
+            <div class="boleto-venc">Vence em 18/06</div>
+          </div>
+          <div class="boleto-right">
+            <span class="boleto-val">R$ 640,00</span>
+            <span class="status-pill pill-pend">PENDENTE</span>
+          </div>
+        </div>
+
+        <div class="boleto-item">
+          <div class="boleto-left">
+            <div class="boleto-fornecedor">Bebidas Norte</div>
+            <div class="boleto-venc">Vence em 25/06</div>
+          </div>
+          <div class="boleto-right">
+            <span class="boleto-val">R$ 1.320,00</span>
+            <span class="status-pill pill-pago">PAGO</span>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+    <div class="extrato-card">
+      <div class="card-header">
+        <div>
+          <div class="card-title">Extrato</div>
+          <div class="card-sub">Movimentações recentes</div>
+        </div>
+      </div>
+      <div class="extrato-filters">
+        <button class="filter-btn active">7 dias</button>
+        <button class="filter-btn">30 dias</button>
+        <button class="filter-btn">Este mês</button>
+        <button class="filter-btn">Banco</button>
+        <button class="filter-btn">Manual</button>
+      </div>
+      <table class="extrato-table">
+        <thead>
+          <tr>
+            <th>Data</th>
+            <th>Descrição</th>
+            <th>Origem</th>
+            <th style="text-align:right">Valor</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td class="td-date">06/06</td>
+            <td class="td-desc">Vendas cartão (maquininha)</td>
+            <td><span class="td-origem">Banco</span></td>
+            <td class="td-val entrada">+ R$ 4.820</td>
+          </tr>
+          <tr>
+            <td class="td-date">06/06</td>
+            <td class="td-desc">Hortifruti diário</td>
+            <td><span class="td-origem">Manual</span></td>
+            <td class="td-val saida">− R$ 380</td>
+          </tr>
+          <tr>
+            <td class="td-date">05/06</td>
+            <td class="td-desc">Vendas cartão (maquininha)</td>
+            <td><span class="td-origem">Banco</span></td>
+            <td class="td-val entrada">+ R$ 5.110</td>
+          </tr>
+          <tr>
+            <td class="td-date">05/06</td>
+            <td class="td-desc">TED — Fornecedor</td>
+            <td><span class="td-origem">Banco</span></td>
+            <td class="td-val saida">− R$ 2.100</td>
+          </tr>
+          <tr>
+            <td class="td-date">04/06</td>
+            <td class="td-desc">Vendas cartão (maquininha)</td>
+            <td><span class="td-origem">Banco</span></td>
+            <td class="td-val entrada">+ R$ 6.340</td>
+          </tr>
+          <tr>
+            <td class="td-date">04/06</td>
+            <td class="td-desc">Crédito Nubank PJ</td>
+            <td><span class="td-origem">Banco</span></td>
+            <td class="td-val entrada">+ R$ 1.120</td>
+          </tr>
+          <tr>
+            <td class="td-date">04/06</td>
+            <td class="td-desc">Mercado atacado</td>
+            <td><span class="td-origem">Manual</span></td>
+            <td class="td-val saida">− R$ 1.240</td>
+          </tr>
+          <tr>
+            <td class="td-date">03/06</td>
+            <td class="td-desc">Débito automático</td>
+            <td><span class="td-origem">Banco</span></td>
+            <td class="td-val saida">− R$ 280</td>
+          </tr>
+          <tr>
+            <td class="td-date">03/06</td>
+            <td class="td-desc">Vendas cartão (maquininha)</td>
+            <td><span class="td-origem">Banco</span></td>
+            <td class="td-val entrada">+ R$ 3.980</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+  </div>
+
+</main>
+
+<!-- FAB -->
+<button class="fab" onclick="openModal()" title="Registrar custo manual">+</button>
+
+<!-- Modal registro manual -->
+<div class="modal-overlay" id="modal" onclick="closeOnOverlay(event)">
+  <div class="modal">
+    <div class="modal-title">Registrar Custo</div>
+    <div class="modal-sub">Hortifruti, mercado ou imprevisto</div>
+
+    <div class="form-row">
+      <div class="form-group">
+        <label class="form-label">Data</label>
+        <input type="date" class="form-input" id="fData">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Valor (R$)</label>
+        <input type="number" class="form-input" placeholder="0,00" id="fValor">
+      </div>
+    </div>
+
+    <div class="form-group">
+      <label class="form-label">Categoria</label>
+      <select class="form-select" id="fCat">
+        <option>Hortifruti</option>
+        <option>Mercado</option>
+        <option>Gás</option>
+        <option>Manutenção</option>
+        <option>Outros</option>
+      </select>
+    </div>
+
+    <div class="form-group">
+      <label class="form-label">Observação (opcional)</label>
+      <input type="text" class="form-input" placeholder="Ex: feiras da semana..." id="fObs">
+    </div>
+
+    <div class="modal-actions">
+      <button class="btn-cancel" onclick="closeModal()">Cancelar</button>
+      <button class="btn-save" onclick="salvar()">Salvar</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// nav
+function setNav(el) {
+  document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+  el.classList.add('active');
+}
+
+// modal
+function openModal() {
+  document.getElementById('modal').classList.add('open');
+  const d = new Date();
+  document.getElementById('fData').value = d.toISOString().split('T')[0];
+}
+function closeModal() { document.getElementById('modal').classList.remove('open'); }
+function closeOnOverlay(e) { if (e.target === document.getElementById('modal')) closeModal(); }
+function salvar() { closeModal(); }
+
+// filter tabs
+document.querySelectorAll('.filter-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+  });
+});
+
+// chart
+const ctx = document.getElementById('barChart').getContext('2d');
+const semanas = ['Sem 1', 'Sem 2', 'Sem 3', 'Sem 4'];
+const entradas = [18400, 22100, 24800, 18910];
+const saidas   = [13200, 16800, 18400, 13380];
+
+new Chart(ctx, {
+  type: 'bar',
+  data: {
+    labels: semanas,
+    datasets: [
+      {
+        label: 'Entradas',
+        data: entradas,
+        backgroundColor: 'rgba(34,201,142,0.25)',
+        borderColor: '#22c98e',
+        borderWidth: 1.5,
+        borderRadius: 4,
+        borderSkipped: false,
+      },
+      {
+        label: 'Saídas',
+        data: saidas,
+        backgroundColor: 'rgba(224,85,85,0.2)',
+        borderColor: '#e05555',
+        borderWidth: 1.5,
+        borderRadius: 4,
+        borderSkipped: false,
+      }
+    ]
+  },
+  options: {
+    responsive: true,
+    maintainAspectRatio: false,
+    plugins: {
+      legend: { display: false },
+      tooltip: {
+        backgroundColor: '#1a1e1e',
+        borderColor: '#2e3535',
+        borderWidth: 1,
+        titleColor: '#6b7878',
+        bodyColor: '#e8edec',
+        titleFont: { family: 'DM Mono', size: 10 },
+        bodyFont: { family: 'DM Mono', size: 12 },
+        callbacks: {
+          label: ctx => ' R$ ' + ctx.parsed.y.toLocaleString('pt-BR')
+        }
+      }
+    },
+    scales: {
+      x: {
+        grid: { color: '#1a1e1e' },
+        ticks: { color: '#6b7878', font: { family: 'DM Mono', size: 10 } },
+        border: { color: '#242929' }
+      },
+      y: {
+        grid: { color: '#1a1e1e' },
+        ticks: {
+          color: '#6b7878',
+          font: { family: 'DM Mono', size: 10 },
+          callback: v => 'R$ ' + (v/1000).toFixed(0) + 'k'
+        },
+        border: { color: '#242929' }
+      }
+    }
+  }
+});
+</script>
+</body>
+</html>
